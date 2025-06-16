@@ -2,14 +2,14 @@ const TelegramBot = require("node-telegram-bot-api");
 const fs = require("fs");
 const path = require("path");
 
-const config = require("../config.json");
-const { clients } = require("../server/server");
+const config = require("./config.json);
+const { clients } = require("./server.js");
 
 const TOKEN = config.botToken;
 const ALLOWED_CHAT_ID = config.allowedChatId;
 
 const bot = new TelegramBot(TOKEN, { polling: true });
-const systemsFile = path.join(__dirname, "../server/systems.json");
+const systemsFile = path.join(__dirname, "./systems.json");
 
 function loadSystems() {
   return fs.existsSync(systemsFile)
