@@ -1,0 +1,20 @@
+{
+  "name": "telegram-c2-agent",
+  "version": "1.0.0",
+  "description": "A lightweight C2 agent controlled via Telegram and WebSocket for remote file deployment and system control.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "bot": "node bot/bot.js",
+    "build": "electron ."
+  },
+  "author": "00nx",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.8",
+    "electron": "^36.4.0",
+    "node-machine-id": "^1.1.12",
+    "node-telegram-bot-api": "^0.66.0",
+    "ws": "^8.18.2"
+  }
+}
