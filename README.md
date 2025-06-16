@@ -26,15 +26,15 @@ A lightweight **Command & Control (C2)** system using **WebSocket** and **Telegr
 ```shell
 
 
-├── ELECTRON/ # Electron-based background agent
+├── ELECTRON/ 
 │ └── main.js
-├── server/ # WebSocket server & telegram bot
-  └── bot.js
-│ ├── server.js
-│ └── systems.json
-├── config.json # Configuration (token, chat ID, download URL)
-├── package.json
-└── README.md
+├── server/
+│ ├── bot.js 
+│ ├── server.js r
+│ ├── systems.json 
+│ └── config.json
+├── package.json 
+└── README.md 
 
 ```
 
