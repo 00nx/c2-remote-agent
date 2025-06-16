@@ -2,7 +2,7 @@ const WebSocket = require("ws");
 const fs = require("fs");
 const path = require("path");
 
-const config = require("../config.json");
+const config = require("./config.json");
 const systemsFile = path.join(__dirname, "systems.json");
 
 let systems = fs.existsSync(systemsFile)
