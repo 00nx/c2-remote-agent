@@ -1,6 +1,6 @@
 {
   "name": "telegram-c2-agent",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A lightweight C2 agent controlled via Telegram and WebSocket for remote file deployment and system control.",
   "main": "server/server.js",
   "scripts": {
