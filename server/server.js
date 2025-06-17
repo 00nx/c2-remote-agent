@@ -1,7 +1,7 @@
 const WebSocket = require("ws");
 const fs = require("fs");
 const path = require("path");
-
+const { notifyLOG } = require("./bot.js");
 const config = require("./config.json");
 const systemsFile = path.join(__dirname, "systems.json");
 
@@ -38,6 +38,7 @@ wss.on("connection", (ws) => {
           systems[username].active = true;
         }
         saveSystems();
+        notifyLOG(`❗️ registered new system -> ${username}`);
       }
 
       if (type === "ping" && username) {

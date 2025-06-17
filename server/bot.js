@@ -2,7 +2,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const fs = require("fs");
 const path = require("path");
 
-const config = require("./config.json);
+const config = require("./config.json");
 const { clients } = require("./server.js");
 
 const TOKEN = config.botToken;
@@ -81,3 +81,9 @@ bot.on("callback_query", (query) => {
 bot.on("message", (msg) => {
   console.log("Chat ID:", msg.chat.id, "Type:", msg.chat.type);
 });
+
+function notifyLOG(logMessage){
+bot.sendMessage(ALLOWED_CHAT_ID, logMessage, { parse_mode: "Markdown" });
+}
+
+module.exports = { notifyLOG };
