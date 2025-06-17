@@ -82,8 +82,13 @@ electron-builder --win-portable
 ```
 ⚠️ The client runs silently in the background with no window or GUI.
 
+---
 
+## 📦 Version 1.0.3
 
+- ➕ Added Telegram notification when a new system registers.
+
+---
 💬 Telegram Bot Commands :
 **/start**	Displays total + active systems
 - 🔍 Show Active	Lists active connected clients
