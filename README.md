@@ -57,6 +57,7 @@ A lightweight **Command & Control (C2)** system using **WebSocket** and **Telegr
 ```bash
 npm install
 ```
+*versions are sensitive*
 
 2. 🛠 Configure config.json
 Create a config.json file in the root with the following structure:
