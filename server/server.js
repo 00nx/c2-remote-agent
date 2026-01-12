@@ -1,5 +1,5 @@
 const WebSocket = require("ws");
-const fs = require("fs");
+const fs = require("fs").promises;
 const path = require("path");
 const { notifyLOG } = require("./bot.js");
 const config = require("./config.json");
@@ -76,3 +76,4 @@ function sendDownload(username) {
 }
 
 module.exports = { clients, systems, sendDownload };
+
