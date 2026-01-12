@@ -29,7 +29,7 @@ wss.on("connection", (ws) => {
 
       if (type === "register") {
         currentUsername = username;
-        clients[username] = ws;
+        clients.set(username, ws);
 
         if (!systems[username]) {
           systems[username] = { uuid, starttime, active: true };
@@ -76,5 +76,6 @@ function sendDownload(username) {
 }
 
 module.exports = { clients, systems, sendDownload };
+
 
 
