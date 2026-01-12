@@ -66,7 +66,7 @@ wss.on("connection", (ws) => {
  * @param {string} username
  */
 function sendDownload(username) {
-  const ws = clients[username];
+  const ws = clients.get(username);
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(`download:${config.downloadUrl}`);
     console.log(`[>] Sent download to ${username}`);
@@ -76,6 +76,7 @@ function sendDownload(username) {
 }
 
 module.exports = { clients, systems, sendDownload };
+
 
 
 
