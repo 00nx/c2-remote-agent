@@ -9,7 +9,7 @@ let systems = fs.existsSync(systemsFile)
   ? JSON.parse(fs.readFileSync(systemsFile))
   : {};
 
-const clients = {};
+const clients = new Map();
 
 const wss = new WebSocket.Server({ port: 3010, path: "/ws" });
 console.log("[*] ws server running on ws://localhost:3010/ws");
@@ -76,4 +76,5 @@ function sendDownload(username) {
 }
 
 module.exports = { clients, systems, sendDownload };
+
 
