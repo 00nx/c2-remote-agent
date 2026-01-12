@@ -81,7 +81,6 @@ wss.on("connection", (ws, req) => {
 
   ws.on("message", async (message) => {
     try {
-      // Important: message is Buffer in ws v8+
       const data = JSON.parse(message.toString());
 
       if (!data?.type) return;
@@ -132,8 +131,7 @@ wss.on("connection", (ws, req) => {
           
           systems[username].active = true;
           systems[username].lastSeen = Date.now();
-          // We save only on significant changes or periodically
-          // await saveSystems();  // ← too frequent, better rely on heartbeat cleanup
+
           break;
         }
 
@@ -168,11 +166,7 @@ wss.on("connection", (ws, req) => {
   });
 });
 
-/**
- * Send download command to specific client
- * @param {string} username
- * @returns {Promise<boolean>}
- */
+
 async function sendDownload(username) {
   const ws = clients.get(username);
   
@@ -201,5 +195,6 @@ module.exports = {
   systems,
   sendDownload
 };
+
 
 
