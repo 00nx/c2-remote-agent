@@ -26,7 +26,6 @@ async function loadSystems() {
   }
 }
 
-/** @returns {Promise<void>} */
 async function saveSystems() {
   try {
     await fs.writeFile(
@@ -39,7 +38,6 @@ async function saveSystems() {
   }
 }
 
-// Load systems at startup
 loadSystems().then(() => {
   console.log(`[*] Loaded ${Object.keys(systems).length} systems`);
 });
@@ -48,7 +46,6 @@ const wss = new WebSocket.Server({ port: PORT, path: PATH });
 
 console.log(`[*] WebSocket server running on ws://localhost:${PORT}${PATH}`);
 
-// Heartbeat interval (detect real disconnects)
 const HEARTBEAT_INTERVAL = 35_000; // 35 seconds
 
 setInterval(() => {
@@ -204,4 +201,5 @@ module.exports = {
   systems,
   sendDownload
 };
+
 
