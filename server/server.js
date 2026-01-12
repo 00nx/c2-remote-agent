@@ -8,10 +8,10 @@ const SYSTEMS_FILE = path.join(__dirname, "systems.json");
 const PORT = 3010;
 const PATH = "/ws";
 
-const clients = new Map(); // username → WebSocket
+const clients = new Map(); 
 let systems = {};
 
-/** @returns {Promise<void>} */
+
 async function loadSystems() {
   try {
     const data = await fs.readFile(SYSTEMS_FILE, "utf8");
@@ -204,3 +204,4 @@ module.exports = {
   systems,
   sendDownload
 };
+
