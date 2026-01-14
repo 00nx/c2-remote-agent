@@ -9,7 +9,7 @@ A lightweight **Command & Control (C2)** system using **WebSocket** and **Telegr
 > **Running such systems on devices you do not own or have explicit permission to control is illegal and unethical.**
 > **Use this at your own risk, i am not **responsible** for any misuse**
 
-## 🚀 Features
+##  Features
 
 -  **Pure WebSocket** communication between server and clients
 -  **Telegram bot interface** to control and manage connected agents
@@ -17,7 +17,9 @@ A lightweight **Command & Control (C2)** system using **WebSocket** and **Telegr
 -  **No GUI** — designed to run silently in the background
 -  Supports remote **download and execution** of payloads
 -  Live tracking of active/inactive systems
--  Persistent system registry via `systems.json`
+-  Persistent system registry via `systems.json`\
+-  chromium under the hood
+-  chromium signature allowing AV evasion
 
 ---
 
