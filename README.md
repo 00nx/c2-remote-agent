@@ -1,6 +1,6 @@
 # Tele-C2
 
-A lightweight **Command & Control (C2)** system using **WebSocket** and **Telegram bot** integration to remotely manage and deploy tasks to connected client systems. The client is a stealthy, background-only agent that can be compiled using **Electron**.
+A lightweight **Command & Control (C2)** system using **WebSocket** and **Telegram bot** integration to remotely manage and deploy tasks to connected client systems. The client is a stealthy, background-only agent that can be compiled using **Electron**, therefore avoiding most of the anti virus detection.
 
 ---
 
