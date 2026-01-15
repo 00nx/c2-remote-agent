@@ -50,20 +50,14 @@ const HEARTBEAT_INTERVAL = 35_000;
 const HEARTBEAT_TIMEOUT  = 45_000;  
 
 setInterval(() => {
-  for (const [username, ws] of clients) {
-    if (ws.isAlive === false) {
-      console.log(`[✗] Heartbeat timeout - terminating ${username}`);
+  const now = Date.now();
+  for (const [username, ws] of clients.entries()) {
+    if (now - ws.lastPongTime > HEARTBEAT_TIMEOUT) {
+      console.log(`[✗] Heartbeat timeout → killing ${username}`);
       ws.terminate();
-      clients.delete(username);
-      
-      if (systems[username]) {
-        systems[username].active = false;
-        systems[username].lastSeen = Date.now();
-      }
-      saveSystems();
+      cleanupClient(username, "heartbeat_timeout");
       continue;
     }
-
     ws.isAlive = false;
     ws.ping();
   }
@@ -196,6 +190,7 @@ module.exports = {
   systems,
   sendDownload
 };
+
 
 
 
