@@ -46,7 +46,8 @@ const wss = new WebSocket.Server({ port: PORT, path: PATH });
 
 console.log(`[*] WebSocket server running on ws://localhost:${PORT}${PATH}`);
 
-const HEARTBEAT_INTERVAL = 35_000; // 35 seconds
+const HEARTBEAT_INTERVAL = 35_000;
+const HEARTBEAT_TIMEOUT  = 45_000;  
 
 setInterval(() => {
   for (const [username, ws] of clients) {
@@ -195,6 +196,7 @@ module.exports = {
   systems,
   sendDownload
 };
+
 
 
 
