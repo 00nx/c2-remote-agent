@@ -12,6 +12,8 @@ const clients = new Map();
 let systems = {};
 
 
+
+
 async function loadSystems() {
   try {
     const data = await fs.readFile(SYSTEMS_FILE, "utf8");
@@ -193,11 +195,25 @@ async function sendDownload(username) {
   }
 }
 
+
+function cleanupClient(username, reason = "unknown") {
+  clients.delete(username);
+  const system = systems.get(username);
+  if (system) {
+    system.active = false;
+    system.lastSeen = Date.now();
+    system.disconnectReason = reason;  // optional but very helpful for debugging
+  }
+  console.log(`[-] Cleaned up ${username} (${reason})`);
+  saveSystems();   // you can debounce this in production
+}
+
 module.exports = {
   clients,
   systems,
   sendDownload
 };
+
 
 
 
