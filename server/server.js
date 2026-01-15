@@ -226,7 +226,6 @@ module.exports = {
   clients,
   systems,
   sendDownload,
-  // Bonus helpers you might want later:
-  // getOnlineCount: () => clients.size,
-  // isOnline: username => clients.has(username) && clients.get(username).readyState === WebSocket.OPEN,
+
 };
+
