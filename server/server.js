@@ -150,6 +150,9 @@ case "register": {
   });
 
   ws.on("close", async (code, reason) => {
+    if (username) {
+    cleanupClient(username, `close_${code}${reason ? `_${reason}` : ""}`);
+  }
     if (username && clients.get(username) === ws) {
       clients.delete(username);
 
@@ -213,6 +216,7 @@ module.exports = {
   systems,
   sendDownload
 };
+
 
 
 
