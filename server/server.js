@@ -9,15 +9,13 @@ const SYSTEMS_FILE = path.join(__dirname, 'systems.json');
 const PORT = 3010;
 const PATH = '/ws';
 
-const HEARTBEAT_INTERVAL = 35_000;  // how often we send pings
-const HEARTBEAT_TIMEOUT  = 50_000;  // must receive pong within this time
+const HEARTBEAT_INTERVAL = 35_000;  
+const HEARTBEAT_TIMEOUT  = 50_000; 
 
-const clients = new Map(); // username → WebSocket
-const systems = new Map(); // username → system metadata
+const clients = new Map(); 
+const systems = new Map(); 
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Persistence
-// ──────────────────────────────────────────────────────────────────────────────
+
 
 async function loadSystems() {
   try {
@@ -27,7 +25,7 @@ async function loadSystems() {
     for (const [username, info] of Object.entries(loaded)) {
       systems.set(username, {
         ...info,
-        active: false, // assume offline on server start
+        active: false, 
         lastSeen: info.lastSeen || Date.now(),
       });
     }
@@ -123,14 +121,14 @@ loadSystems().then(() => {
               return;
             }
 
-            // Prevent takeover / concurrent connections
+           
             if (clients.has(candidate) && clients.get(candidate) !== ws) {
               ws.send(JSON.stringify({ error: 'username_taken' }));
               ws.close(1008, 'Username already connected');
               return;
             }
 
-            // Clean previous connection if exists (rare race)
+           
             if (clients.has(candidate)) {
               clients.get(candidate).terminate();
             }
@@ -228,4 +226,5 @@ module.exports = {
   sendDownload,
 
 };
+
 
