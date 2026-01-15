@@ -89,6 +89,11 @@ case "register": {
     ws.close(1008, "Username length must be 3–64 characters");
     return;
   }
+  if (clients.has(candidate) && clients.get(candidate) !== ws) {
+    ws.send(JSON.stringify({ error: "username_already_connected" }));
+    ws.close(1008, "Username already in use");
+    return;
+  }
 
           const newUsername = data.username.trim();
 
@@ -193,6 +198,7 @@ module.exports = {
   systems,
   sendDownload
 };
+
 
 
 
