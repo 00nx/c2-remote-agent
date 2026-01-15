@@ -81,11 +81,14 @@ wss.on("connection", (ws, req) => {
       if (!data?.type) return;
 
       switch (data.type) {
-        case "register": {
-          if (!data.username || typeof data.username !== "string") {
-            ws.send(JSON.stringify({ error: "missing_or_invalid_username" }));
-            return;
-          }
+case "register": {
+  const candidate = (data.username ?? "").trim();
+
+  if (!candidate || candidate.length < 3 || candidate.length > 64) {
+    ws.send(JSON.stringify({ error: "invalid_username" }));
+    ws.close(1008, "Username length must be 3–64 characters");
+    return;
+  }
 
           const newUsername = data.username.trim();
 
@@ -190,6 +193,7 @@ module.exports = {
   systems,
   sendDownload
 };
+
 
 
 
